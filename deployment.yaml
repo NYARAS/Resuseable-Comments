@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-app
+  labels:
+    app: ansible-gce-demo-247311
+spec:
+  ports:
+    - port: 3000
+  selector:
+    app: ansible-gce-demo-247311
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: gce-calvine
+  labels:
+    app: ansible-gce-demo-247311
+spec:
+  selector:
+    matchLabels:
+      app: ansible-gce-demo-247311
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ansible-gce-demo-247311
+        tier: frontend
+    spec:
+      containers:
+      - image: gcr.io/ansible-gce-demo-247311/node-app:0.0.2
+        name: ansible-gce-demo-247311
+        ports:
+        - containerPort: 3000
+          name: ansible
