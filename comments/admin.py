@@ -21,4 +21,4 @@ from .models import Comment, Post,CommentPost
 admin.site.register(Comment)
 
 admin.site.register(models.CommentPost)
-admin.site.register(models.Post,PostAdmin)
+admin.site.register(models.Post)
