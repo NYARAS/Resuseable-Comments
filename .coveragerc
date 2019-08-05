@@ -1,6 +1,23 @@
 [report]
 show_missing = True
-
+omit =
+    manage.py
+    setup.py
+    
+    calvineComments/wsgi.py
+    calvineComments/views.py
+    calvineComments/__init__.py
+    calvineComments/urls.py
+    venv*
+    comments/migrations*
+    comments/api*
+    comments/apps.py*
+    
+    
+    
+    comments/templatetags*
+    search/migrations*
+    search*
    
 
     
