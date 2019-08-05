@@ -28,7 +28,7 @@ jobs:
             
             coverage html
   test:
-    working_directory: ~/repo
+    # working_directory: ~/repo
     docker:
       - image: circleci/python3.6
       
