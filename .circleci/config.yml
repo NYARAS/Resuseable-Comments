@@ -2,7 +2,7 @@ version: 2
 jobs:
   
   test:
-    
+
     docker:
       - image: circleci/python:3.6
       
@@ -37,6 +37,12 @@ jobs:
    
   
   publish:
+     docker:
+      - image: circleci/python:3.6
+      
+    environment:
+      - ANSIBLE_HOST_KEY_CHECKING: False
+    working_directory: ~/repo
       - run:
         name: init .pypirc
         command: |
@@ -44,36 +50,36 @@ jobs:
           echo -e "username = NYARAS" >> ~/.pypirc
           echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
 
-    - run:
-        name: create packages
-        command: |
-          python3 setup.py sdist bdist_wheel
-        #  python setup.py sdist
+      - run:
+          name: create packages
+          command: |
+            python3 setup.py sdist bdist_wheel
+          #  python setup.py sdist
 
-    - run:
-        name: upload to pypi
-        command: |
-          . venv/bin/activate
-          pip install twine
-          twine upload dist/*
-    
-    - add_ssh_keys:
-        fingerprints:
-            - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
-    
-    - run:
-        name: executing ansible to AWS server
-        command: |
-          . venv/bin/activate
-          pip install ansible
-          ansible-playbook ansible/deploy.yml  -i ansible/hosts
+      - run:
+          name: upload to pypi
+          command: |
+            . venv/bin/activate
+            pip install twine
+            twine upload dist/*
+      
+      - add_ssh_keys:
+          fingerprints:
+              - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
+      
+      - run:
+          name: executing ansible to AWS server
+          command: |
+            . venv/bin/activate
+            pip install ansible
+            ansible-playbook ansible/deploy.yml  -i ansible/hosts
 
 
 workflows:
   version: 2
   jobs:
-    test
-    publish:
-      filter:
-        branch:
-          master
+    - test
+    - publish:
+        filter:
+          branch:
+            master
