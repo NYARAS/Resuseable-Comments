@@ -13,7 +13,7 @@ omit =
     comments/api*
     comments/apps.py*
     comments/views.py*
-    comments/admin.py*
+    comments/views.py*
     
     comments/templatetags*
     search/migrations*
