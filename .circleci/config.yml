@@ -1,14 +1,10 @@
 version: 2
 jobs:
-  
   test:
 
     docker:
       - image: circleci/python:3.6
-      
-    environment:
-      - ANSIBLE_HOST_KEY_CHECKING: False
-    working_directory: ~/repo
+    # working_directory: ~/repo
 
     
     steps:
@@ -37,12 +33,12 @@ jobs:
    
   
   publish:
-     docker:
+    docker:
       - image: circleci/python:3.6
+    steps:
       
-    environment:
-      - ANSIBLE_HOST_KEY_CHECKING: False
-    working_directory: ~/repo
+      - checkout
+    # working_directory: ~/repo
       - run:
         name: init .pypirc
         command: |
@@ -72,7 +68,7 @@ jobs:
           command: |
             . venv/bin/activate
             pip install ansible
-            ansible-playbook ansible/deploy.yml  -i ansible/hosts
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook ansible/deploy.yml  -i ansible/hosts
 
 
 workflows:
