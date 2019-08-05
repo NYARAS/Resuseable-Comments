@@ -1,16 +1,14 @@
 version: 2
 jobs:
-  test:
-
+  build:
+    working_directory: ~/repo
+    # The primary container is an instance of the first image listed. The job's commands run in this container.
     docker:
       - image: circleci/python:3.6
-    # working_directory: ~/repo
-
-    
+    # The secondary container is an instance of the second listed image which is run in a common network where ports exposed on the primary container are available on localhost.
+      
     steps:
-      
       - checkout
-      
       - run:
           name: install dependencies
           command: |
@@ -29,16 +27,12 @@ jobs:
             coverage report --fail-under=80
             
             coverage html
-
-   
-  
-  publish:
+  test:
     docker:
-      - image: circleci/python:3.6
-    steps:
+      - image: circleci/python3.6
       
+    steps:
       - checkout
-    # working_directory: ~/repo
       - run:
         name: init .pypirc
         command: |
@@ -71,12 +65,15 @@ jobs:
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook ansible/deploy.yml  -i ansible/hosts
 
 
+
 workflows:
   version: 2
-  test_and_deploy:
+  build_and_test:
     jobs:
-      - test
-      - publish:
-          filter:
-            branch:
-              master
+      - build
+      - test:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
