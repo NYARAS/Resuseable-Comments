@@ -1,138 +1,69 @@
-version: 2.1
-workflows:
-  build_and_deploy:
-    jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
-      - test-python-install:
-          version: "3.4"
-          requires:
-            - build
-      - test-python-install:
-          version: "3.5"
-          requires:
-            - build
-      - test-python-install:
-          version: "3.6"
-          requires:
-            - build
-      # - test-python-install:
-      #     version: "3.7"
-      #     requires:
-      #       - build
-      - deploy:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+version: 2
+
+# jobs refer to a single execution of the build
 jobs:
+  # build is the name of the job....they can be multiple and unique
   build:
+    # builds occur in a docker container
     docker:
       - image: circleci/python:3.6
+      
+    environment:
+      - ANSIBLE_HOST_KEY_CHECKING: False
+    working_directory: ~/repo
+
+    # series/ list of steps done for the build
     steps:
+      # Step 1: obtain repo from GitHub
       - checkout
-      - restore_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
+      # Step 2: create virtual env and install dependencies
       - run:
-          name: install python dependencies
+          name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip3 install -r requirements.txt
-      - save_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
-          paths:
-            - "venv"
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            sudo apt install rsync
+      # Step 3: run linter and tests
       - run:
           name: run tests
           command: |
             . venv/bin/activate
+          
+            coverage run  --branch --source='.' manage.py test
+            coverage report --fail-under=80
             
-            coverage run  --branch --source='.' manage.py test
-            coverage report --fail-under=80
-      - store_artifacts:
-          path: htmlcov/
-  test-python-install:
-    parameters:
-      version:
-        type: string
-        default: latest
-    docker:
-      - image: circleci/python:<< parameters.version >>
-    steps:
-      - checkout
-      - restore_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
-      - run:
-          name: install python dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip3 install -r requirements.txt
-      - save_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
-          paths:
-            - "venv"
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            coverage run  --branch --source='.' manage.py test
-            coverage report --fail-under=80
-      - store_artifacts:
-          path: htmlcov/
-      - run:
-          name: Smoke Test Install 
-          command: |
-            python3 --version
-            sudo pip3 install circleci
-  integration:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      - run: echo "It works!"
-      - run: echo $RUN_EXTRA_TESTS
-  deploy:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      - checkout
-      - restore_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
-      - run:
-          name: install python dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            coverage run  --branch --source='.' manage.py test
-            coverage report --fail-under=80
-      - save_cache:
-          key: v1-dependency-cache-{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}
-          paths:
-            - "venv"
-      - run:
-          name: verify git tag vs. version
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            python3 setup.py verify
+            coverage html
+
       - run:
           name: init .pypirc
           command: |
             echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = levlaz" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+            echo -e "username = NYARAS" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
+
       - run:
           name: create packages
           command: |
-            make package
+            python3 setup.py sdist bdist_wheel
+           # python setup.py sdist
+
       - run:
           name: upload to pypi
           command: |
             . venv/bin/activate
+            pip install twine
             twine upload dist/*
+      
+      - add_ssh_keys:
+          fingerprints:
+              - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
+     
+      - run:
+          name: executing ansible to AWS server
+          command: |
+            . venv/bin/activate
+            pip install ansible
+            ansible-playbook ansible/deploy.yml  -i ansible/hosts
+  
