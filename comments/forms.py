@@ -9,10 +9,10 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ('content', )
     def clean_content(self):
-        data = self.cleaned_data.get('content')
+        # data = self.cleaned_data.get('content')
         if len(data) <= 10:
             raise forms.ValidationError('Please enter at least 10 characters')
-        return data
+        # return data
 
 class CommentPostForm(forms.ModelForm):
     
