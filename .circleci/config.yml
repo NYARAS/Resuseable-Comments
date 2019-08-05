@@ -1,10 +1,8 @@
 version: 2
-
-# jobs refer to a single execution of the build
 jobs:
-  # build is the name of the job....they can be multiple and unique
+  
   build:
-    # builds occur in a docker container
+    
     docker:
       - image: circleci/python:3.6
       
@@ -12,11 +10,11 @@ jobs:
       - ANSIBLE_HOST_KEY_CHECKING: False
     working_directory: ~/repo
 
-    # series/ list of steps done for the build
+    
     steps:
-      # Step 1: obtain repo from GitHub
+      
       - checkout
-      # Step 2: create virtual env and install dependencies
+      
       - run:
           name: install dependencies
           command: |
@@ -36,34 +34,46 @@ jobs:
             
             coverage html
 
-      - run:
-          name: init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = NYARAS" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
-
-      - run:
-          name: create packages
-          command: |
-            python3 setup.py sdist bdist_wheel
-          #  python setup.py sdist
-
-      - run:
-          name: upload to pypi
-          command: |
-            . venv/bin/activate
-            pip install twine
-            twine upload dist/*
-      
-      - add_ssh_keys:
-          fingerprints:
-              - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
-     
-      - run:
-          name: executing ansible to AWS server
-          command: |
-            . venv/bin/activate
-            pip install ansible
-            ansible-playbook ansible/deploy.yml  -i ansible/hosts
+   
   
+  publish:
+      - run:
+        name: init .pypirc
+        command: |
+          echo -e "[pypi]" >> ~/.pypirc
+          echo -e "username = NYARAS" >> ~/.pypirc
+          echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
+
+    - run:
+        name: create packages
+        command: |
+          python3 setup.py sdist bdist_wheel
+        #  python setup.py sdist
+
+    - run:
+        name: upload to pypi
+        command: |
+          . venv/bin/activate
+          pip install twine
+          twine upload dist/*
+    
+    - add_ssh_keys:
+        fingerprints:
+            - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
+    
+    - run:
+        name: executing ansible to AWS server
+        command: |
+          . venv/bin/activate
+          pip install ansible
+          ansible-playbook ansible/deploy.yml  -i ansible/hosts
+
+
+workflows:
+  version: 2
+  jobs:
+    test
+    publish:
+      filter:
+        branch:
+          master
