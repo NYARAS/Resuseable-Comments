@@ -8,14 +8,12 @@ omit =
     calvineComments/views.py
     calvineComments/__init__.py
     calvineComments/urls.py
-    calvineComments/test_settings.py
     venv*
     comments/migrations*
     comments/api*
     comments/apps.py*
     comments/views.py*
-    comments/tests.py*
-    comments/tests*
+    
     comments/templatetags*
     search/migrations*
     search*
