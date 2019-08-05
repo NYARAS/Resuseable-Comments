@@ -7,6 +7,7 @@ omit =
     calvineComments/wsgi.py
     calvineComments/views.py
     calvineComments/__init__.py
+    calvineComments/urls.py
     calvineComments/test_settings.py
     venv*
     comments/migrations*
@@ -17,10 +18,7 @@ omit =
     comments/tests*
     comments/templatetags*
     search/migrations*
-    search/apps.py*
-    search/views.py*
-    
-    calvineComments/view.py*
-    calvineComments/urls.py*
+    search*
+   
 
     

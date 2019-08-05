@@ -1,22 +1,14 @@
 version: 2
-
-# jobs refer to a single execution of the build
 jobs:
-  # build is the name of the job....they can be multiple and unique
   build:
-    # builds occur in a docker container
+    working_directory: ~/repo
+    # The primary container is an instance of the first image listed. The job's commands run in this container.
     docker:
       - image: circleci/python:3.6
+    # The secondary container is an instance of the second listed image which is run in a common network where ports exposed on the primary container are available on localhost.
       
-    environment:
-      - ANSIBLE_HOST_KEY_CHECKING: False
-    working_directory: ~/repo
-
-    # series/ list of steps done for the build
     steps:
-      # Step 1: obtain repo from GitHub
       - checkout
-      # Step 2: create virtual env and install dependencies
       - run:
           name: install dependencies
           command: |
@@ -35,19 +27,24 @@ jobs:
             coverage report --fail-under=80
             
             coverage html
-
+  test:
+    docker:
+      - image: circleci/python3.6
+      
+    steps:
+      - checkout
       - run:
-          name: init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = NYARAS" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
+        name: init .pypirc
+        command: |
+          echo -e "[pypi]" >> ~/.pypirc
+          echo -e "username = NYARAS" >> ~/.pypirc
+          echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc      
 
       - run:
           name: create packages
           command: |
             python3 setup.py sdist bdist_wheel
-           # python setup.py sdist
+          #  python setup.py sdist
 
       - run:
           name: upload to pypi
@@ -59,11 +56,24 @@ jobs:
       - add_ssh_keys:
           fingerprints:
               - "9b:27:c9:d9:9f:ce:ea:fb:38:fd:3f:ea:f4:f8:5b:d4"
-     
+      
       - run:
           name: executing ansible to AWS server
           command: |
             . venv/bin/activate
             pip install ansible
-            ansible-playbook ansible/deploy.yml  -i ansible/hosts
-  
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook ansible/deploy.yml  -i ansible/hosts
+
+
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
