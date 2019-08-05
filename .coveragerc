@@ -17,10 +17,7 @@ omit =
     comments/tests*
     comments/templatetags*
     search/migrations*
-    search/apps.py*
-    search/views.py*
-    
-    calvineComments/view.py*
-    calvineComments/urls.py*
+    search*
+   
 
     
